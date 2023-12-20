@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id       String @id @default(cuid()) @map("_id")
+  userId   String @unique //this is going to be from clerk auth
+  name     String
+  imageUrl String
+  email    String
+
+  servers  Server[] //relation to server model
+  members  Member[] //relation to member model
+  channels Channel[] //relation to channel model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Server {
+  id         String @id @default(cuid()) @map("_id")
+  name       String
+  imageUrl   String
+  inviteCode String
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id]) //realtion to profile model
+
+  members  Member[] //relation to member model
+  channels Channel[] //relation to channel model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+// Enums can be used to set predefined or expected values. 
+enum MemberRole {
+  ADMIN
+  MODERATOR
+  GUEST
+}
+
+model Member {
+  id   String     @id @default(cuid()) @map("_id")
+  role MemberRole @default(GUEST)
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id]) //realtion to profile model
+  serverId  String
+  server    Server  @relation(fields: [serverId], references: [id]) //relation to server moddel
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([serverId])
+}
+
+enum ChannelType {
+  TEXT
+  AUDIO
+  VIDEO
+}
+
+model Channel {
+  id   String      @id @default(cuid()) @map("_id")
+  name String
+  type ChannelType @default(TEXT)
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id]) //realtion to profile model
+  serverId  String
+  server    Server  @relation(fields: [serverId], references: [id]) //relation to server moddel
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([serverId])
+}
